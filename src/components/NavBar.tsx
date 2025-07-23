@@ -8,6 +8,10 @@ export default function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
 
+  const handleClick = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
   return (
     <header className="p-4 flex justify-between items-center bg-blue-600 text-white">
       {/* Title and Home Button */}
@@ -33,7 +37,7 @@ export default function Navbar() {
               Admin Dashboard
             </a>
           )}
-          <button onClick={() => signOut()} className="ml-4 underline">
+          <button onClick={handleClick} className="ml-4 underline">
             Sign Out
           </button>
         </div>
