@@ -1,14 +1,18 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { useState } from "react";
 import NavBar from "../../components/NavBar";
+import AdminProductForm from "@/components/adminProductForm";
 
 export default function AdminPage() {
+  const [showForm, setShowForm] = useState(false);
+
   return (
     <>
       <NavBar />
       <main className="min-h-screen flex flex-col items-center bg-gray-50 p-8">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+
         {/* Inventory Section */}
         <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Inventory Overview</h2>
@@ -26,12 +30,19 @@ export default function AdminPage() {
         <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Product Management</h2>
           <div className="flex gap-4 mb-4">
-            <button className="bg-green-500 text-white px-4 py-2 rounded">Create Product</button>
+            <button
+              className="bg-green-500 text-white px-4 py-2 rounded"
+              onClick={() => setShowForm(!showForm)}
+            >
+              {showForm ? "Hide Form" : "Create Product"}
+            </button>
             <button className="bg-yellow-500 text-white px-4 py-2 rounded">Discontinue Product</button>
             <button className="bg-blue-500 text-white px-4 py-2 rounded">Customise Product</button>
           </div>
-          {/* Placeholder for product list */}
-          <div className="border rounded p-4 text-gray-500">Product list goes here...</div>
+
+          {showForm && <AdminProductForm />}
+
+          {/* Future: Product list goes here */}
         </section>
 
         {/* Order Management Section */}
