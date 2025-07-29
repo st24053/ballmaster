@@ -69,6 +69,7 @@ export default function AdminProductForm({ initialValues, onDone }: Props) {
         await insertProduct({
           ...payload,
           created_by: createdBy,
+          current_stock: payload.stock, // Set current_stock to initial stock
         });
       }
 
