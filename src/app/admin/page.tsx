@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import NavBar from "../../components/NavBar";
 import AdminProductForm from "@/components/adminProductForm";
 import { getProducts, discontinueProduct } from "@/app/lib/productService";
+import { getAllOrders, refundOrder, deleteOrder, confirmOrder} from "@/app/lib/orderService";
+import { Order } from "@/app/types/orders"
+
 
 // Import or define the Product type
 import type { Product } from "@/app/types/product";
@@ -13,16 +16,19 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // Fetch products on load
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       setLoading(true);
-      const fetched = await getProducts();
-      setProducts(fetched);
+      const fetchedProducts = await getProducts();
+      const fetchedOrders = await getAllOrders();
+      setProducts(fetchedProducts);
+      setOrders(fetchedOrders);
       setLoading(false);
     }
-    fetchProducts();
+    fetchData();
   }, []);
 
   // Handle discontinuing a product
@@ -43,6 +49,23 @@ export default function AdminPage() {
   const handleCreateClick = () => {
     setEditingProduct(null); // new product, no prior data
     setShowForm(true);
+  };
+
+  const handleRefund = async (id: string) => {
+  await refundOrder(id);
+  const updated = await getAllOrders();
+  setOrders(updated);
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+  await deleteOrder(id);
+  setOrders((prev) => prev.filter((o) => o.id !== id));
+  };
+
+  const handleConfirm = async (id: string) => {
+  await confirmOrder(id);
+  const updated = await getAllOrders();
+  setOrders(updated);
   };
 
   return (
@@ -94,40 +117,41 @@ export default function AdminPage() {
               <p>Loading products...</p>
             ) : products.length === 0 ? (
               <p className="text-gray-500">No products found.</p>
-            ) : (
-              <table className="w-full text-left border mt-4">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="p-2 border">Name</th>
-                    <th className="p-2 border">Price</th>
-                    <th className="p-2 border">Stock</th>
-                    <th className="p-2 border">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id} className="border-t">
-                      <td className="p-2 border">{product.name}</td>
-                      <td className="p-2 border">${product.price}</td>
-                      <td className="p-2 border">{product.stock}</td>
-                      <td className="p-2 border">
-                        <button
-                          className="bg-yellow-500 text-white px-2 py-1 mr-2 rounded"
-                          onClick={() => handleCustomise(product)}
-                        >
-                          Customise
-                        </button>
-                        <button
-                          className="bg-red-500 text-white px-2 py-1 rounded"
-                          onClick={() => handleDiscontinue(product.id)}
-                        >
-                          Discontinue
-                        </button>
-                      </td>
+            ) : (<table className="w-full text-left border mt-4">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="p-2 border">Name</th>
+                      <th className="p-2 border">Price</th>
+                      <th className="p-2 border">Stock</th>
+                      <th className="p-2 border">Current Stock</th> {/* Added this */}
+                      <th className="p-2 border">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => (
+                      <tr key={product.id} className="border-t">
+                        <td className="p-2 border">{product.name}</td>
+                        <td className="p-2 border">${product.price}</td>
+                        <td className="p-2 border">{product.stock}</td>
+                        <td className="p-2 border">{product.current_stock}</td> {/* Added this */}
+                        <td className="p-2 border">
+                          <button
+                            className="bg-yellow-500 text-white px-2 py-1 mr-2 rounded"
+                            onClick={() => handleCustomise(product)}
+                          >
+                            Customise
+                          </button>
+                          <button
+                            className="bg-red-500 text-white px-2 py-1 rounded"
+                            onClick={() => handleDiscontinue(product.id)}
+                          >
+                            Discontinue
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
             )}
           </div>
         </section>
@@ -139,7 +163,51 @@ export default function AdminPage() {
             <button className="bg-red-500 text-white px-4 py-2 rounded">Delete Order</button>
             <button className="bg-purple-500 text-white px-4 py-2 rounded">Refund Order</button>
           </div>
-          <div className="border rounded p-4 text-gray-500">Order list goes here...</div>
+          <table className="w-full text-left border mt-4">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 border">Product</th>
+                <th className="p-2 border">Customer</th>
+                <th className="p-2 border">Quantity</th>
+                <th className="p-2 border">Status</th>
+                <th className="p-2 border">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id} className="border-t">
+                  <td className="p-2 border">{order.product_name}</td>
+                  <td className="p-2 border">{order.customer_name}</td>
+                  <td className="p-2 border">{order.quantity}</td>
+                  <td className="p-2 border">{order.status}</td>
+                    <td className="p-2 border space-x-2">
+                      {order.status === "pending" && (
+                        <>
+                          <button
+                            className="bg-purple-500 text-white px-2 py-1 rounded"
+                            onClick={() => handleRefund(order.id)}
+                          >
+                            Refund
+                          </button>
+                          <button
+                            className="bg-green-600 text-white px-2 py-1 rounded"
+                            onClick={() => handleConfirm(order.id)}
+                          >
+                            Confirm
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                        onClick={() => handleDeleteOrder(order.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       </main>
     </>
