@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Product } from '../types/product';
 
+// Upload an image to Supabase Storage and return the public URL
 export async function uploadImage(file: File): Promise<string> {
   const fileName = `${Date.now()}-${file.name}`;
   const { data, error } = await supabase.storage
@@ -17,6 +18,7 @@ export async function uploadImage(file: File): Promise<string> {
   return publicUrlData.publicUrl;
 }
 
+// Insert a new product into the 'products' table
 export async function insertProduct(product: Omit<Product, 'id' | 'created_at'>) {
   const { data, error } = await supabase
     .from('products')
@@ -26,4 +28,41 @@ export async function insertProduct(product: Omit<Product, 'id' | 'created_at'>)
   if (error) throw error;
 
   return data[0]; // inserted product
+}
+
+// Fetch all products from the 'products' table
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to fetch products:', error.message);
+    return [];
+  }
+
+  return data;
+}
+
+// Delete a product by ID from the 'products' table
+export async function discontinueProduct(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Failed to delete product with id ${id}:`, error.message);
+    throw error;
+  }
+}
+// Update an existing product by ID
+export async function updateProduct(id: string, updates: Partial<Product>) {
+  const { error } = await supabase
+    .from('products')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) throw error;
 }

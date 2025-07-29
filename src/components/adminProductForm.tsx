@@ -1,109 +1,143 @@
-import { useState } from 'react';
-import { insertProduct } from '../app/lib/productService';
-import { useSession } from 'next-auth/react';
+'use client';
 
-export default function AdminProductForm() {
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { insertProduct, updateProduct } from '../app/lib/productService';
+import { Product } from '../app/types/product';
+
+type Props = {
+  initialValues?: Product | null;
+  onDone?: () => void;
+};
+
+export default function AdminProductForm({ initialValues, onDone }: Props) {
   const { data: session } = useSession();
+
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
     stock: '',
     categories: '',
-    image_url: '',    // <-- added image_url field here
+    image_url: '',
   });
+
+  useEffect(() => {
+    if (initialValues) {
+      setForm({
+        name: initialValues.name,
+        description: initialValues.description,
+        price: initialValues.price.toString(),
+        stock: initialValues.stock.toString(),
+        categories: Array.isArray(initialValues.categories)
+          ? initialValues.categories.join(', ')
+          : (initialValues.categories ?? ''),
+        image_url: initialValues.image_url ?? '',
+      });
+    }
+  }, [initialValues]);
+
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.image_url) return alert("Please enter an image URL.");
-
     setLoading(true);
+
+    const payload = {
+      ...form,
+      price: parseFloat(form.price),
+      stock: parseInt(form.stock),
+      categories: form.categories.split(',').map((cat) => cat.trim()),
+    };
+
     try {
-      const product = {
-        name: form.name,
-        description: form.description,
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock),
-        image_url: form.image_url,
-        categories: form.categories.split(',').map(c => c.trim()),
-        user_id: session.user.email,
-      };
-      await insertProduct(product);
-      alert("Product created successfully!");
-      setForm({ name: '', description: '', price: '', stock: '', categories: '', image_url: '' });
-    } catch (err: any) {
-      alert("Error creating product: " + err.message);
-      console.error("Full error:", err);
-    } finally {
-      setLoading(false);
+      if (initialValues?.id) {
+        // update existing product
+        await updateProduct(initialValues.id, payload);
+      } else {
+        // create new product with created_by
+        const createdBy = session?.user?.name;
+        if (!createdBy) throw new Error('User session is not available');
+
+        await insertProduct({
+          ...payload,
+          created_by: createdBy,
+        });
+      }
+
+      if (onDone) onDone();
+    } catch (err) {
+      console.error('Failed to save product', err);
     }
+
+    setLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto p-4 border rounded-xl">
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl bg-gray-100 p-4 rounded">
       <input
         name="name"
+        placeholder="Name"
         value={form.name}
         onChange={handleChange}
-        placeholder="Name"
+        className="w-full p-2 mb-2 border rounded"
         required
-        className="w-full border px-3 py-2"
       />
       <textarea
         name="description"
+        placeholder="Description"
         value={form.description}
         onChange={handleChange}
-        placeholder="Description"
+        className="w-full p-2 mb-2 border rounded"
         required
-        className="w-full border px-3 py-2"
       />
       <input
         name="price"
-        value={form.price}
-        onChange={handleChange}
         placeholder="Price"
-        required
         type="number"
         step="0.01"
-        className="w-full border px-3 py-2"
+        value={form.price}
+        onChange={handleChange}
+        className="w-full p-2 mb-2 border rounded"
+        required
       />
       <input
         name="stock"
+        placeholder="Stock"
+        type="number"
         value={form.stock}
         onChange={handleChange}
-        placeholder="Stock"
+        className="w-full p-2 mb-2 border rounded"
         required
-        type="number"
-        className="w-full border px-3 py-2"
       />
       <input
         name="categories"
+        placeholder="Categories (comma-separated)"
         value={form.categories}
         onChange={handleChange}
-        placeholder="Comma-separated tags"
-        required
-        className="w-full border px-3 py-2"
+        className="w-full p-2 mb-2 border rounded"
       />
       <input
         name="image_url"
+        placeholder="Image URL"
         value={form.image_url}
         onChange={handleChange}
-        placeholder="Image URL"
-        required
-        type="url"
-        className="w-full border px-3 py-2"
+        className="w-full p-2 mb-4 border rounded"
       />
+
       <button
         type="submit"
-        className="bg-black text-white px-4 py-2 rounded"
         disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
       >
-        {loading ? "Creating..." : "Create Product"}
+        {initialValues ? 'Update Product' : 'Create Product'}
       </button>
     </form>
   );

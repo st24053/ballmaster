@@ -7,4 +7,5 @@ export type Product = {
   image_url: string;
   categories: string[];
   created_at?: string;
+  created_by: string;
 };
