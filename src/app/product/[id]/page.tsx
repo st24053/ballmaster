@@ -7,15 +7,17 @@ import { addToLocalCart } from "@/app/lib/cartService";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import Navbar from "@/components/NavBar";
+import React from "react";
 
 type Props = {
-  params: {
-    id: string;
-  };
+    params: Promise<{
+        id: string;
+    }>;
 };
 
 export default function ProductPageWrapper({ params }: Props) {
-  return <ProductPageContent id={params.id} />;
+    const { id } = React.use(params);
+    return <ProductPageContent id={id} />;
 }
 
 function ProductPageContent({ id }: { id: string }) {

@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [formKey, setFormKey] = useState(0);
 
   // Fetch products on load
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function AdminPage() {
   
   const handleCreateClick = () => {
     setEditingProduct(null); // new product, no prior data
+    setFormKey(prev => prev + 1);  // Triggers re-render
     setShowForm(true);
   };
 
@@ -93,7 +95,13 @@ export default function AdminPage() {
           <div className="flex gap-4 mb-4">
             <button
               className="bg-green-500 text-white px-4 py-2 rounded"
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                if (!showForm) {
+                  // Show form and reset editingProduct to create a new product
+                  setEditingProduct(null);
+                }
+                setShowForm(!showForm);
+              }}
             >
               {showForm ? "Hide Form" : "Create Product"}
             </button>
@@ -101,6 +109,7 @@ export default function AdminPage() {
 
           {showForm && (
             <AdminProductForm
+              key={formKey} // Forces remount = fresh form
               initialValues={editingProduct}
               onDone={async () => {
                 setShowForm(false);
@@ -166,11 +175,11 @@ export default function AdminPage() {
           <table className="w-full text-left border mt-4">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-2 border">Product</th>
-                <th className="p-2 border">Customer</th>
-                <th className="p-2 border">Quantity</th>
-                <th className="p-2 border">Status</th>
-                <th className="p-2 border">Actions</th>
+              <th className="p-2 border">Product</th>
+              <th className="p-2 border">Customer</th>
+              <th className="p-2 border">Quantity</th>
+              <th className="p-2 border">Status</th>
+              <th className="p-2 border">Actions</th>
               </tr>
             </thead>
             <tbody>
