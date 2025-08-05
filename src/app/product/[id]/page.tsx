@@ -55,9 +55,12 @@ function ProductPageContent({ id }: { id: string }) {
         status: "pending",
       });
       setStatus("Item added to cart!");
-    } catch (error: any) {
-      setStatus(`Failed: ${error.message}`);
-    }
+    } catch (error: unknown) {
+  if (error instanceof Error) {
+    setStatus(`Failed: ${error.message}`);
+  } else {
+    setStatus("Failed: An unknown error occurred.");
+  }
   };
 
   return (
