@@ -46,9 +46,9 @@ function ProductPageContent({ id }: { id: string }) {
 
     try {
       await addToLocalCart({
-        product_id: product.id,
+        product_id: product.id ?? "", //falback to empty string if id is undefined
         product_name: product.name,
-        user_email: session.user.email,
+        user_email: session.user.email ?? "", //falback to empty email if email is undefined
         quantity,
         total_price: quantity * product.price,
         customer_name: session.user.name || "Anonymous",

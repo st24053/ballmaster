@@ -6,7 +6,7 @@ import { insertProduct, updateProduct } from '../app/lib/productService';
 import { Product } from '../app/types/product';
 import { supabase } from '../app/lib/supabaseClient'; // Make sure this is set up
 
-const initialForm = {
+const initialForm: Product= {
   name: '',
   description: '',
   price: '',
@@ -15,6 +15,7 @@ const initialForm = {
   categories: [],
   image_url: ''
 };
+const [form, setForm] = useState<Product>(initialForm);
 
 export default function AdminProductForm({ initialValues, onDone }: {
 
@@ -28,10 +29,9 @@ export default function AdminProductForm({ initialValues, onDone }: {
   const [imageFile, setImageFile] = useState<File | null>(null); // File state for image upload
   const [loading, setLoading] = useState(false); // Loading state for form submission
   const [previewUrl, setPreviewUrl] = useState<string | null>(null); // Image preview URL
-
   
-
   useEffect(() => { // Populate form with initial values if provided
+    
     if (initialValues) { // Check if initialValues is not null
       setForm({ // Set form state with initial values
         name: initialValues.name,
@@ -41,7 +41,7 @@ export default function AdminProductForm({ initialValues, onDone }: {
         stock: initialValues.stock.toString(),
         categories: Array.isArray(initialValues.categories)
           ? initialValues.categories
-          : (initialValues.categories ?? '').split(',').map((c) => c.trim()),
+          : (initialValues.categories as string)?.split(',').map((c) => c.trim()) ?? [],
         image_url: initialValues.image_url ?? '',
       });
     }
@@ -134,7 +134,6 @@ const uploadImageToSupabase = async (file: File) => {
 
       const payload = {
         ...form,
-        price: parseFloat(form.price),
         stock: parseInt(form.stock),
         current_stock: parseInt(form.current_stock),
         image_url: imageUrl,

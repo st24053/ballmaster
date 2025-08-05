@@ -8,4 +8,5 @@ export type Order = {
   customer_name: string;
   status: 'pending' | 'completed' | 'refunded'; // restrict to valid statuses
   created_at?: string; // optional if Supabase handles timestamps
+  image_url: string;
 };
