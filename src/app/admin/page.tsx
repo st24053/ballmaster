@@ -222,12 +222,14 @@ const handleConfirm = async (id: string) => {
                             >
                               Customise
                             </button>
+                            {product.id && (
                             <button
                               className="bg-red-500 text-white px-2 py-1 rounded"
-                              onClick={() => handleDiscontinue(product.id)}
+                              onClick={() => handleDiscontinue(product.id!)}
                             >
                               Discontinue
                             </button>
+                          )}
                           </td>
                         </tr>
                       ))}
@@ -266,13 +268,13 @@ const handleConfirm = async (id: string) => {
                           <>
                             <button
                               className="bg-purple-500 text-white px-2 py-1 rounded"
-                              onClick={() => handleRefund(order.id)}
+                              onClick={() => order.id && handleRefund(order.id)}
                             >
                               Refund
                             </button>
                             <button
                               className="bg-green-600 text-white px-2 py-1 rounded"
-                              onClick={() => handleConfirm(order.id)}
+                              onClick={() => order.id && handleConfirm(order.id)}
                             >
                               Confirm
                             </button>
@@ -280,7 +282,7 @@ const handleConfirm = async (id: string) => {
                         )}
                         <button
                           className="bg-red-500 text-white px-2 py-1 rounded"
-                          onClick={() => handleDeleteOrder(order.id)}
+                          onClick={() => order.id && handleDeleteOrder(order.id)}
                         >
                           Delete
                         </button>
