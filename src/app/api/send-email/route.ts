@@ -1,28 +1,43 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import mailjet from "node-mailjet";
 
 export async function POST(req: Request) {
-  const { to, subject, text } = await req.json();
+  const { to, subject, html } = await req.json();
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS,
-    },
-  });
+  const mj = mailjet.apiConnect(
+    process.env.MAILJET_API_KEY!,
+    process.env.MAILJET_API_SECRET!
+  );
 
-  const mailOptions = {
-    from: process.env.GMAIL_USER,
+  console.log("Sending email with Mailjet:", {
     to,
     subject,
-    text,
-  };
+    html,
+  });
 
   try {
-    await transporter.sendMail(mailOptions);
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ success: false, error });
+    console.log("Request body:", to, subject, html);
+    const result = await mj.post("send", { version: "v3.1" }).request({
+      Messages: [
+        {
+          From: {
+            Email: process.env.MAILJET_SENDER_EMAIL!,
+            Name: "Ballmaster",
+          },
+          To: [
+            {
+              Email: to,
+            },
+          ],
+          Subject: subject,
+          HTMLPart: html,
+        },
+      ],
+    });
+
+    return NextResponse.json({ success: true, result: result.body });
+  } catch (error: any) {
+    console.error("Mailjet error:", error);
+    return NextResponse.json({ success: false, error: error.message });
   }
 }

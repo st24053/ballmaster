@@ -68,6 +68,48 @@ export default function CartPage() {
       .select("*")
       .eq("user_email", session?.user?.email);
     setRemoteOrders(data || []);
+
+    // Get order with product info
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("user_email, product_name, quantity, total_price, image_url")
+    .eq("id", id)
+    .single();
+
+  if (error || !order?.user_email) {
+    console.error("Failed to fetch order:", error);
+    return;
+  }
+
+  const html = `
+  <div style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #F44336;">❌ Order Refunded</h2>
+    <p>Hi there,</p>
+    <p>Your order has been successfully refunded. Here are the details:</p>
+
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; max-width: 600px;">
+      <img src="${order.image_url}" alt="${order.product_name}" style="width: 100%; max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 10px;" />
+
+      <h3>${order.product_name}</h3>
+      <p><strong>Quantity:</strong> ${order.quantity}</p>
+      <p><strong>Total Refunded:</strong> $${order.total_price.toFixed(2)}</p>
+    </div>
+
+    <p style="margin-top: 20px;">Please contact us if you have any questions.</p>
+    <p>– The Ballmaster Team</p>
+  </div>
+`;
+
+  await fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: order.user_email,
+      subject: "Your Order Has Been Refunded!",
+      html, // Use HTML version
+    }),
+  })
+    
   };
 
   if (!session?.user) return <p className="p-4">Please login to view your cart.</p>;

@@ -7,7 +7,7 @@ import { getProducts, discontinueProduct } from "@/app/lib/productService";
 import { getAllOrders, refundOrder, deleteOrder, confirmOrder} from "@/app/lib/orderService";
 import { Order } from "@/app/types/orders"
 import { useSession, signOut } from "next-auth/react";
-
+import { supabase } from '../lib/supabaseClient';
 
 // Import or define the Product type
 import type { Product } from "@/app/types/product";
@@ -59,6 +59,47 @@ export default function AdminPage() {
   await refundOrder(id);
   const updated = await getAllOrders();
   setOrders(updated);
+  // Get order with product info
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("user_email, product_name, quantity, total_price, image_url")
+    .eq("id", id)
+    .single();
+
+  if (error || !order?.user_email) {
+    console.error("Failed to fetch order:", error);
+    return;
+  }
+
+  const html = `
+  <div style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #F44336;">❌ Order Refunded</h2>
+    <p>Hi there,</p>
+    <p>Your order has been successfully refunded. Here are the details:</p>
+
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; max-width: 600px;">
+      <img src="${order.image_url}" alt="${order.product_name}" style="width: 100%; max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 10px;" />
+
+      <h3>${order.product_name}</h3>
+      <p><strong>Quantity:</strong> ${order.quantity}</p>
+      <p><strong>Total Refunded:</strong> $${order.total_price.toFixed(2)}</p>
+    </div>
+
+    <p style="margin-top: 20px;">Please contact us if you have any questions.</p>
+    <p>– The Ballmaster Team</p>
+  </div>
+`;
+
+  await fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: order.user_email,
+      subject: "Your Order Has Been Refunded!",
+      html, // Use HTML version
+    }),
+  })
+
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -66,11 +107,52 @@ export default function AdminPage() {
   setOrders((prev) => prev.filter((o) => o.id !== id));
   };
 
-  const handleConfirm = async (id: string) => {
+const handleConfirm = async (id: string) => {
   await confirmOrder(id);
   const updated = await getAllOrders();
   setOrders(updated);
-  };
+
+  // Get order with product info
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("user_email, product_name, quantity, total_price, image_url")
+    .eq("id", id)
+    .single();
+
+  if (error || !order?.user_email) {
+    console.error("Failed to fetch order:", error);
+    return;
+  }
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h2 style="color: #4CAF50;">✅ Order Confirmation</h2>
+      <p>Hi there,</p>
+      <p>Thank you for your purchase. Here is your order summary:</p>
+
+      <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; max-width: 600px;">
+        <img src="${order.image_url}" alt="${order.product_name}" style="width: 100%; max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 10px;" />
+
+        <h3>${order.product_name}</h3>
+        <p><strong>Quantity:</strong> ${order.quantity}</p>
+        <p><strong>Total Price:</strong> $${order.total_price.toFixed(2)}</p>
+      </div>
+
+      <p style="margin-top: 20px;">We'll be in touch shortly!</p>
+      <p>– The Ballmaster Team</p>
+    </div>
+  `;
+
+  await fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: order.user_email,
+      subject: "Your Order Has Been Confirmed!",
+      html, // Use HTML version
+    }),
+  });
+};
 
   return (
     <>
