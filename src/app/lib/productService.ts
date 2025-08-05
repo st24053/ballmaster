@@ -66,6 +66,34 @@ export async function getProducts(): Promise<Product[]> {
 
 // Delete a product by ID from the 'products' table
 export async function discontinueProduct(id: string): Promise<void> {
+
+  // Step 1: Get the image path from the product row
+  const { data: product, error: fetchError } = await supabase
+    .from("products")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !product) {
+    throw new Error(`Failed to fetch product: ${fetchError?.message}`);
+  }
+
+  // Step 2: Extract storage path from full URL
+  const imageUrl = product.image_url;
+  const bucketName = "product-images"; // adjust this if your bucket name is different
+  const pathMatch = imageUrl?.match(new RegExp(`${bucketName}/(.*)$`));
+  const imagePath = pathMatch?.[1];
+
+  if (imagePath) {
+    const { error: deleteError } = await supabase.storage
+      .from(bucketName)
+      .remove([imagePath]);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete image: ${deleteError.message}`);
+    }
+  }
+
   const { error } = await supabase
     .from('products')
     .delete()
