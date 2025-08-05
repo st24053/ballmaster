@@ -6,7 +6,7 @@ import { insertProduct, updateProduct } from '../app/lib/productService';
 import { Product } from '../app/types/product';
 import { supabase } from '../app/lib/supabaseClient'; // Make sure this is set up
 
-const initialForm: Product= {
+const initialForm = {
   name: '',
   description: '',
   price: '',
@@ -15,7 +15,6 @@ const initialForm: Product= {
   categories: [],
   image_url: ''
 };
-const [form, setForm] = useState<Product>(initialForm);
 
 export default function AdminProductForm({ initialValues, onDone }: {
 
@@ -23,17 +22,18 @@ export default function AdminProductForm({ initialValues, onDone }: {
   onDone?: () => void;
 }) {
 
-  const { data: session } = useSession(); // Get the current user session
-  const [form, setForm] = useState(initialForm); // Initial form state
-  const [newCategory, setNewCategory] = useState(''); // New category input state
-  const [imageFile, setImageFile] = useState<File | null>(null); // File state for image upload
-  const [loading, setLoading] = useState(false); // Loading state for form submission
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // Image preview URL
+  const { data: session } = useSession();
+  const [form, setForm] = useState(initialForm);
+  const [newCategory, setNewCategory] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   
-  useEffect(() => { // Populate form with initial values if provided
-    
-    if (initialValues) { // Check if initialValues is not null
-      setForm({ // Set form state with initial values
+
+  useEffect(() => {
+    if (initialValues) {
+      setForm({
         name: initialValues.name,
         description: initialValues.description,
         price: initialValues.price.toString(),
@@ -41,7 +41,7 @@ export default function AdminProductForm({ initialValues, onDone }: {
         stock: initialValues.stock.toString(),
         categories: Array.isArray(initialValues.categories)
           ? initialValues.categories
-          : (initialValues.categories as string)?.split(',').map((c) => c.trim()) ?? [],
+          : (initialValues.categories ?? '').split(',').map((c) => c.trim()),
         image_url: initialValues.image_url ?? '',
       });
     }
@@ -75,7 +75,7 @@ export default function AdminProductForm({ initialValues, onDone }: {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check if it's a JPEG
+    // ✅ Check if it's a JPEG
     if (
       !['image/jpeg', 'image/jpg'].includes(file.type.toLowerCase())
     ) {
@@ -95,7 +95,7 @@ export default function AdminProductForm({ initialValues, onDone }: {
 const uploadImageToSupabase = async (file: File) => {
   const resizedBlob = await file;
   const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-  const folder = "public";
+  const folder = "public"; // Must match your RLS policy
   const filePath = `${folder}/${fileName}`;
 
   const { data, error } = await supabase.storage
@@ -134,6 +134,7 @@ const uploadImageToSupabase = async (file: File) => {
 
       const payload = {
         ...form,
+        price: parseFloat(form.price),
         stock: parseInt(form.stock),
         current_stock: parseInt(form.current_stock),
         image_url: imageUrl,

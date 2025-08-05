@@ -6,7 +6,6 @@ import Image from "next/image";
 import { addToLocalCart } from "@/app/lib/cartService";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
-import type { Product } from "@/app/types/product";
 import Navbar from "@/components/NavBar";
 import React from "react";
 
@@ -22,7 +21,7 @@ export default function ProductPageWrapper({ params }: Props) {
 }
 
 function ProductPageContent({ id }: { id: string }) {
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [status, setStatus] = useState("");
   const { data: session } = useSession();
@@ -46,9 +45,9 @@ function ProductPageContent({ id }: { id: string }) {
 
     try {
       await addToLocalCart({
-        product_id: product.id ?? "", //falback to empty string if id is undefined
+        product_id: product.id,
         product_name: product.name,
-        user_email: session.user.email ?? "", //falback to empty email if email is undefined
+        user_email: session.user.email,
         quantity,
         total_price: quantity * product.price,
         customer_name: session.user.name || "Anonymous",
@@ -56,12 +55,9 @@ function ProductPageContent({ id }: { id: string }) {
         status: "pending",
       });
       setStatus("Item added to cart!");
-    } catch (error: unknown) {
-  if (error instanceof Error) {
-    setStatus(`Failed: ${error.message}`);
-  } else {
-    setStatus("Failed: An unknown error occurred.");
-  }
+    } catch (error: any) {
+      setStatus(`Failed: ${error.message}`);
+    }
   };
 
   return (
@@ -129,4 +125,4 @@ function ProductPageContent({ id }: { id: string }) {
     </div>
     </div>
   );
-}}
+}
