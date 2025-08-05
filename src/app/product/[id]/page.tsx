@@ -128,4 +128,4 @@ function ProductPageContent({ id }: { id: string }) {
     </div>
     </div>
   );
-}
+}}
