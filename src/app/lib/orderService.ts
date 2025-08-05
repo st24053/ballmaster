@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { Order } from "../types/orders";
+import { sendEmailReceipt } from "./gmailService";
 
 export async function getAllOrders(): Promise<Order[]> {
   const { data, error } = await supabase.from("orders").select("*");
@@ -37,7 +38,7 @@ export async function confirmOrder(orderId: string) {
   const newStock = product.current_stock - order.quantity;
 
   if (newStock < 0) {
-    throw new Error("Insufficient stock to confirm order.");
+    alert("Insufficient stock to confirm order."); // Alert user if stock is insufficient
   }
 
   const { error: updateProductError } = await supabase

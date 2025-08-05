@@ -17,9 +17,6 @@ export default function Navbar() {
       {/* Title and Home Button */}
       <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push("/")}> 
         <h1 className="text-xl font-bold">Ballmaster</h1>
-        <button className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-200 transition">
-          Home
-        </button>
       </div>
 
       {session?.user ? (

@@ -93,6 +93,7 @@ export default function CartPage() {
                 <li key={index} className="border p-4 rounded shadow-sm">
                   <div className="flex justify-between items-center">
                     <div>
+
                       <p className="font-bold">{item.product_name}</p>
                       <p>Quantity: {item.quantity}</p>
                       <p>Total: ${item.total_price.toFixed(2)}</p>

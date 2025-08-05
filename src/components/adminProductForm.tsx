@@ -22,18 +22,18 @@ export default function AdminProductForm({ initialValues, onDone }: {
   onDone?: () => void;
 }) {
 
-  const { data: session } = useSession();
-  const [form, setForm] = useState(initialForm);
-  const [newCategory, setNewCategory] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { data: session } = useSession(); // Get the current user session
+  const [form, setForm] = useState(initialForm); // Initial form state
+  const [newCategory, setNewCategory] = useState(''); // New category input state
+  const [imageFile, setImageFile] = useState<File | null>(null); // File state for image upload
+  const [loading, setLoading] = useState(false); // Loading state for form submission
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // Image preview URL
 
   
 
-  useEffect(() => {
-    if (initialValues) {
-      setForm({
+  useEffect(() => { // Populate form with initial values if provided
+    if (initialValues) { // Check if initialValues is not null
+      setForm({ // Set form state with initial values
         name: initialValues.name,
         description: initialValues.description,
         price: initialValues.price.toString(),
@@ -75,7 +75,7 @@ export default function AdminProductForm({ initialValues, onDone }: {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // ✅ Check if it's a JPEG
+    // Check if it's a JPEG
     if (
       !['image/jpeg', 'image/jpg'].includes(file.type.toLowerCase())
     ) {
@@ -95,7 +95,7 @@ export default function AdminProductForm({ initialValues, onDone }: {
 const uploadImageToSupabase = async (file: File) => {
   const resizedBlob = await file;
   const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-  const folder = "public"; // Must match your RLS policy
+  const folder = "public";
   const filePath = `${folder}/${fileName}`;
 
   const { data, error } = await supabase.storage

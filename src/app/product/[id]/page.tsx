@@ -51,6 +51,7 @@ function ProductPageContent({ id }: { id: string }) {
         quantity,
         total_price: quantity * product.price,
         customer_name: session.user.name || "Anonymous",
+        image_url: product.image_url || "",
         status: "pending",
       });
       setStatus("Item added to cart!");

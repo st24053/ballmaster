@@ -6,6 +6,7 @@ import AdminProductForm from "@/components/adminProductForm";
 import { getProducts, discontinueProduct } from "@/app/lib/productService";
 import { getAllOrders, refundOrder, deleteOrder, confirmOrder} from "@/app/lib/orderService";
 import { Order } from "@/app/types/orders"
+import { useSession, signOut } from "next-auth/react";
 
 
 // Import or define the Product type
@@ -18,6 +19,7 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [formKey, setFormKey] = useState(0);
+  const { data: session } = useSession();
 
   // Fetch products on load
   useEffect(() => {
@@ -73,152 +75,160 @@ export default function AdminPage() {
   return (
     <>
       <NavBar />
-      <main className="min-h-screen flex flex-col items-center bg-gray-50 p-8">
-        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+        {(session?.user as { role?: string })?.role === "admin" && (
+        <main className="min-h-screen flex flex-col items-center bg-gray-50 p-8">
+          <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-        {/* Inventory Section */}
-        <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Inventory Overview</h2>
-          <div className="flex flex-wrap gap-8 mb-4">
-            <div>
-              <span className="font-bold">Stock:</span> <span>--</span>
+          {/* Inventory Section */}
+          <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4">Inventory Overview</h2>
+            <div className="flex flex-wrap gap-8 mb-4">
+              <div>
+                <span className="font-bold">Stock:</span> <span>--</span>
+              </div>
+              <div>
+                <span className="font-bold">Profit:</span> <span>--</span>
+              </div>
             </div>
-            <div>
-              <span className="font-bold">Profit:</span> <span>--</span>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        {/* Product Management Section */}
-        <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Product Management</h2>
-          <div className="flex gap-4 mb-4">
-            <button
-              className="bg-green-500 text-white px-4 py-2 rounded"
-              onClick={() => {
-                if (!showForm) {
-                  // Show form and reset editingProduct to create a new product
+          {/* Product Management Section */}
+          <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4">Product Management</h2>
+            <div className="flex gap-4 mb-4">
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded"
+                onClick={() => {
+                  if (!showForm) {
+                    // Show form and reset editingProduct to create a new product
+                    setEditingProduct(null);
+                  }
+                  setShowForm(!showForm);
+                }}
+              >
+                {showForm ? "Hide Form" : "Create Product"}
+              </button>
+            </div>
+
+            {showForm && (
+              <AdminProductForm
+                key={formKey} // Forces remount = fresh form
+                initialValues={editingProduct}
+                onDone={async () => {
+                  setShowForm(false);
                   setEditingProduct(null);
-                }
-                setShowForm(!showForm);
-              }}
-            >
-              {showForm ? "Hide Form" : "Create Product"}
-            </button>
-          </div>
-
-          {showForm && (
-            <AdminProductForm
-              key={formKey} // Forces remount = fresh form
-              initialValues={editingProduct}
-              onDone={async () => {
-                setShowForm(false);
-                setEditingProduct(null);
-                const refreshed = await getProducts();
-                setProducts(refreshed);
-              }}
-            />
-          )}
-
-          {/* Product List */}
-          <div className="mt-6">
-            {loading ? (
-              <p>Loading products...</p>
-            ) : products.length === 0 ? (
-              <p className="text-gray-500">No products found.</p>
-            ) : (<table className="w-full text-left border mt-4">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="p-2 border">Name</th>
-                      <th className="p-2 border">Price</th>
-                      <th className="p-2 border">Stock</th>
-                      <th className="p-2 border">Current Stock</th> {/* Added this */}
-                      <th className="p-2 border">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((product) => (
-                      <tr key={product.id} className="border-t">
-                        <td className="p-2 border">{product.name}</td>
-                        <td className="p-2 border">${product.price}</td>
-                        <td className="p-2 border">{product.stock}</td>
-                        <td className="p-2 border">{product.current_stock}</td> {/* Added this */}
-                        <td className="p-2 border">
-                          <button
-                            className="bg-yellow-500 text-white px-2 py-1 mr-2 rounded"
-                            onClick={() => handleCustomise(product)}
-                          >
-                            Customise
-                          </button>
-                          <button
-                            className="bg-red-500 text-white px-2 py-1 rounded"
-                            onClick={() => handleDiscontinue(product.id)}
-                          >
-                            Discontinue
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  const refreshed = await getProducts();
+                  setProducts(refreshed);
+                }}
+              />
             )}
-          </div>
-        </section>
 
-        {/* Order Management Section */}
-        <section className="w-full max-w-4xl bg-white rounded shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Order Management</h2>
-          <div className="flex gap-4 mb-4">
-            <button className="bg-red-500 text-white px-4 py-2 rounded">Delete Order</button>
-            <button className="bg-purple-500 text-white px-4 py-2 rounded">Refund Order</button>
-          </div>
-          <table className="w-full text-left border mt-4">
-            <thead className="bg-gray-100">
-              <tr>
-              <th className="p-2 border">Product</th>
-              <th className="p-2 border">Customer</th>
-              <th className="p-2 border">Quantity</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-t">
-                  <td className="p-2 border">{order.product_name}</td>
-                  <td className="p-2 border">{order.customer_name}</td>
-                  <td className="p-2 border">{order.quantity}</td>
-                  <td className="p-2 border">{order.status}</td>
-                    <td className="p-2 border space-x-2">
-                      {order.status === "pending" && (
-                        <>
-                          <button
-                            className="bg-purple-500 text-white px-2 py-1 rounded"
-                            onClick={() => handleRefund(order.id)}
-                          >
-                            Refund
-                          </button>
-                          <button
-                            className="bg-green-600 text-white px-2 py-1 rounded"
-                            onClick={() => handleConfirm(order.id)}
-                          >
-                            Confirm
-                          </button>
-                        </>
-                      )}
-                      <button
-                        className="bg-red-500 text-white px-2 py-1 rounded"
-                        onClick={() => handleDeleteOrder(order.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
+            {/* Product List */}
+            <div className="mt-6">
+              {loading ? (
+                <p>Loading products...</p>
+              ) : products.length === 0 ? (
+                <p className="text-gray-500">No products found.</p>
+              ) : (<table className="w-full text-left border mt-4">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="p-2 border">Name</th>
+                        <th className="p-2 border">Price</th>
+                        <th className="p-2 border">Stock</th>
+                        <th className="p-2 border">Current Stock</th> {/* Added this */}
+                        <th className="p-2 border">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map((product) => (
+                        <tr key={product.id} className="border-t">
+                          <td className="p-2 border">{product.name}</td>
+                          <td className="p-2 border">${product.price}</td>
+                          <td className="p-2 border">{product.stock}</td>
+                          <td className="p-2 border">{product.current_stock}</td> {/* Added this */}
+                          <td className="p-2 border">
+                            <button
+                              className="bg-yellow-500 text-white px-2 py-1 mr-2 rounded"
+                              onClick={() => handleCustomise(product)}
+                            >
+                              Customise
+                            </button>
+                            <button
+                              className="bg-red-500 text-white px-2 py-1 rounded"
+                              onClick={() => handleDiscontinue(product.id)}
+                            >
+                              Discontinue
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+              )}
+            </div>
+          </section>
+
+          {/* Order Management Section */}
+          <section className="w-full max-w-4xl bg-white rounded shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Order Management</h2>
+            <div className="flex gap-4 mb-4">
+              <button className="bg-red-500 text-white px-4 py-2 rounded">Delete Order</button>
+              <button className="bg-purple-500 text-white px-4 py-2 rounded">Refund Order</button>
+            </div>
+            <table className="w-full text-left border mt-4">
+              <thead className="bg-gray-100">
+                <tr>
+                <th className="p-2 border">Product</th>
+                <th className="p-2 border">Customer</th>
+                <th className="p-2 border">Quantity</th>
+                <th className="p-2 border">Status</th>
+                <th className="p-2 border">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      </main>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-t">
+                    <td className="p-2 border">{order.product_name}</td>
+                    <td className="p-2 border">{order.customer_name}</td>
+                    <td className="p-2 border">{order.quantity}</td>
+                    <td className="p-2 border">{order.status}</td>
+                      <td className="p-2 border space-x-2">
+                        {order.status === "pending" && (
+                          <>
+                            <button
+                              className="bg-purple-500 text-white px-2 py-1 rounded"
+                              onClick={() => handleRefund(order.id)}
+                            >
+                              Refund
+                            </button>
+                            <button
+                              className="bg-green-600 text-white px-2 py-1 rounded"
+                              onClick={() => handleConfirm(order.id)}
+                            >
+                              Confirm
+                            </button>
+                          </>
+                        )}
+                        <button
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                          onClick={() => handleDeleteOrder(order.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </main>
+      )}
+  {(session?.user as { role?: string })?.role !== "admin" && (
+        <main className="min-h-screen flex flex-col items-center bg-gray-50 p-8">
+          <h1 className="text-3xl font-bold mb-6">Access Denied</h1>
+          <p className="text-gray-600">You do not have permission to view this page.</p>
+        </main>
+    )}
     </>
   );
 }
