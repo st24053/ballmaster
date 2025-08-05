@@ -6,6 +6,7 @@ import Image from "next/image";
 import { addToLocalCart } from "@/app/lib/cartService";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
+import type { Product } from "@/app/types/product";
 import Navbar from "@/components/NavBar";
 import React from "react";
 
@@ -21,7 +22,7 @@ export default function ProductPageWrapper({ params }: Props) {
 }
 
 function ProductPageContent({ id }: { id: string }) {
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [status, setStatus] = useState("");
   const { data: session } = useSession();
