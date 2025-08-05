@@ -161,19 +161,6 @@ const handleConfirm = async (id: string) => {
         <main className="min-h-screen flex flex-col items-center bg-gray-50 p-8">
           <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-          {/* Inventory Section */}
-          <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Inventory Overview</h2>
-            <div className="flex flex-wrap gap-8 mb-4">
-              <div>
-                <span className="font-bold">Stock:</span> <span>--</span>
-              </div>
-              <div>
-                <span className="font-bold">Profit:</span> <span>--</span>
-              </div>
-            </div>
-          </section>
-
           {/* Product Management Section */}
           <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4">Product Management</h2>
