@@ -44,8 +44,5 @@ export async function POST(req: Request) {
     console.error("Unknown error:", error);
     return NextResponse.json({ success: false, error: "Unknown error occurred" });
   }
-} {  try { }catch (error: any) {
-    console.error("Mailjet error:", error);
-    return NextResponse.json({ success: false, error: error.message });
-  }}
+}
 }
