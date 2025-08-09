@@ -47,7 +47,7 @@ function ProductPageContent({ id }: { id: string }) {
       await addToLocalCart({
         product_id: product.id,
         product_name: product.name,
-        user_email: session.user.email,
+        user_email: session.user.email!,
         quantity,
         total_price: quantity * product.price,
         customer_name: session.user.name || "Anonymous",

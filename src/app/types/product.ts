@@ -1,12 +1,14 @@
 export type Product = {
-  id?: string; // Optional if Supabase auto-generates it
+  id: string;
   name: string;
   description: string;
   price: number;
+  current_stock: number;
   stock: number;
-  current_stock: number; // Current stock available
-  image_url: string;
-  categories: string[];
-  created_at?: string; // optional if Supabase handles timestamps
-  created_by: string;
+  categories: string | string[] | null; // explicitly allow string or string[] or null
+  image_url?: string;
+  created_by?: string; // optional for fetched rows
 };
+
+// Type for inserting new products
+export type NewProduct = Omit<Product, 'id'> & { created_by: string };

@@ -1,5 +1,4 @@
 import { supabase } from './supabaseClient';
-import { Product } from '../types/product';
 import { Order } from '../types/orders';
 
 
@@ -36,7 +35,7 @@ export async function uploadImage(file: File): Promise<string> {
 }
 
 // Insert a new product into the 'products' table
-export async function insertProduct(product: Product) {
+export async function insertProduct(product: NewProduct) {
   const { current_stock, ...rest } = product;
 
   const { error } = await supabase.from("products").insert([
@@ -119,3 +118,18 @@ export async function placeOrder(order: Order) {
   if (error) throw error;
   return data;
 }
+
+export type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  current_stock: number;
+  stock: number;
+  categories: string[];
+  image_url?: string;
+  created_by?: string; // optional for fetched rows
+};
+
+// Type for inserting new products
+export type NewProduct = Omit<Product, 'id'> & { created_by: string };

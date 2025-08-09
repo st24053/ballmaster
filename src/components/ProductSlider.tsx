@@ -27,7 +27,7 @@ export function ProductSlider() {
       Array.isArray(p.categories)
         ? p.categories
         : typeof p.categories === "string"
-          ? p.categories.split(",").map(cat => cat.trim())
+          ? p.categories.split(",").map((cat: string) => cat.trim())
           : []
     )
   ));

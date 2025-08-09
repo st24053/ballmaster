@@ -12,14 +12,14 @@ const initialForm = {
   price: '',
   current_stock: '',
   stock: '',
-  categories: [],
+  categories: [] as string[], // Ensure this is always an array
   image_url: ''
 };
 
-export default function AdminProductForm({ initialValues, onDone }: {
+export default function AdminProductForm({ initialValues, onDoneAction }: {
 
   initialValues?: Product | null;
-  onDone?: () => void;
+  onDoneAction?: () => void;
 }) {
 
   const { data: session } = useSession();
@@ -32,20 +32,22 @@ export default function AdminProductForm({ initialValues, onDone }: {
   
 
   useEffect(() => {
-    if (initialValues) {
-      setForm({
-        name: initialValues.name,
-        description: initialValues.description,
-        price: initialValues.price.toString(),
-        current_stock: initialValues.current_stock.toString(),
-        stock: initialValues.stock.toString(),
-        categories: Array.isArray(initialValues.categories)
-          ? initialValues.categories
-          : (initialValues.categories ?? '').split(',').map((c) => c.trim()),
-        image_url: initialValues.image_url ?? '',
-      });
-    }
-  }, [initialValues]);
+  if (initialValues) {
+    setForm({
+      name: initialValues.name,
+      description: initialValues.description,
+      price: initialValues.price.toString(),
+      current_stock: initialValues.current_stock.toString(),
+      stock: initialValues.stock.toString(),
+      categories: Array.isArray(initialValues.categories)
+        ? initialValues.categories
+        : ((initialValues.categories ?? '') as string)
+            .split(',')
+            .map((c: string) => c.trim()),
+      image_url: initialValues.image_url ?? '',
+    });
+  }
+}, [initialValues]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -149,12 +151,10 @@ const uploadImageToSupabase = async (file: File) => {
         await insertProduct({
           ...payload,
           created_by: createdBy,
-          current_stock: payload.current_stock,
-          stock: payload.stock,
         });
       }
 
-      if (onDone) onDone();
+      if (onDoneAction) onDoneAction();
     } catch (err) {
       console.error('Failed to save product', err);
     }
