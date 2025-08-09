@@ -183,7 +183,7 @@ const handleConfirm = async (id: string) => {
               <AdminProductForm
                 key={formKey} // Forces remount = fresh form
                 initialValues={editingProduct}
-                onDone={async () => {
+                onDoneAction={async () => {
                   setShowForm(false);
                   setEditingProduct(null);
                   const refreshed = await getProducts();
