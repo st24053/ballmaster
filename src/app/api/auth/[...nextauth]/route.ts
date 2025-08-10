@@ -24,7 +24,7 @@ const handler = NextAuth({
   callbacks: {
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.email === "st24053@ormiston.school.nz" ? "admin" : "user";
+        session.user.role = token.email?.endsWith("@ormiston.school.nz") ? "admin" : "user";
       }
       return session;
     },
