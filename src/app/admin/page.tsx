@@ -242,10 +242,6 @@ const handleConfirm = async (id: string) => {
           {/* Order Management Section */}
           <section className="w-full max-w-4xl bg-white rounded shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Order Management</h2>
-            <div className="flex gap-4 mb-4">
-              <button className="bg-red-500 text-white px-4 py-2 rounded">Delete Order</button>
-              <button className="bg-purple-500 text-white px-4 py-2 rounded">Refund Order</button>
-            </div>
             <table className="w-full text-left border mt-4">
               <thead className="bg-gray-100">
                 <tr>
@@ -260,7 +256,14 @@ const handleConfirm = async (id: string) => {
                 {orders.map((order) => (
                   <tr key={order.id} className="border-t">
                     <td className="p-2 border">{order.product_name}</td>
-                    <td className="p-2 border">{order.customer_name}</td>
+                    <td className="p-2 border">
+                      <a
+                        href={`mailto:${order.user_email}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {order.customer_name}
+                      </a>
+                    </td>
                     <td className="p-2 border">{order.quantity}</td>
                     <td className="p-2 border">{order.status}</td>
                       <td className="p-2 border space-x-2">
