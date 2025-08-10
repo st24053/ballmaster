@@ -155,8 +155,10 @@ export default function CartPage() {
     <>
       <Navbar />
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Your Cart</h1>
-
+        <div className="flex flex-col items-center">
+          <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
+        </div>
+      
         {/* Local Cart */}
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-2">Current Order (Unconfirmed)</h2>

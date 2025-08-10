@@ -162,7 +162,7 @@ const handleConfirm = async (id: string) => {
           <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
           {/* Product Management Section */}
-          <section className="w-full max-w-4xl bg-white rounded shadow p-6 mb-8">
+          <section className="w-full max-w-5xl bg-white rounded shadow p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4">Product Management</h2>
             <div className="flex gap-4 mb-4">
               <button
@@ -240,7 +240,7 @@ const handleConfirm = async (id: string) => {
           </section>
 
           {/* Order Management Section */}
-          <section className="w-full max-w-4xl bg-white rounded shadow p-6">
+          <section className="w-full max-w-5xl bg-white rounded shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Order Management</h2>
             <table className="w-full text-left border mt-4">
               <thead className="bg-gray-100">
