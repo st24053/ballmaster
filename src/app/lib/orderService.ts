@@ -37,10 +37,13 @@ export async function confirmOrder(orderId: string) {
 
   const newStock = product.current_stock - order.quantity;
 
+  // Stop here if there isn't enough stock
   if (newStock < 0) {
-    alert("Insufficient stock to confirm order."); // Alert user if stock is insufficient
+    alert("Insufficient stock to confirm order.");
+    return; // Prevents stock update & order confirmation
   }
 
+  // Update product stock
   const { error: updateProductError } = await supabase
     .from("products")
     .update({ current_stock: newStock })
@@ -48,6 +51,7 @@ export async function confirmOrder(orderId: string) {
 
   if (updateProductError) throw new Error(updateProductError.message);
 
+  // Update order status
   const { error: updateOrderError } = await supabase
     .from("orders")
     .update({ status: "completed" })

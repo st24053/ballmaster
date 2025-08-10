@@ -12,10 +12,11 @@ import { supabase } from "@/app/lib/supabaseClient";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/NavBar";
 import { Order } from "@/app/types/orders";
+import {Product} from "@/app/types/product";
 
 export default function CartPage() {
   const { data: session } = useSession();
-
+  const [hasInsufficientStock, setHasInsufficientStock] = useState(false);
   const [localCart, setLocalCart] = useState<Order[]>([]);
   const [remoteOrders, setRemoteOrders] = useState<Order[]>([]);
 
@@ -39,6 +40,39 @@ export default function CartPage() {
 
     fetchRemoteOrders();
   }, [session]);
+
+  useEffect(() => {
+  async function checkStock() {
+    if (localCart.length === 0) {
+      setHasInsufficientStock(false);
+      return;
+    }
+
+    // Fetch product IDs from cart
+    const productIds = localCart.map((item) => item.product_id);
+
+    // Get current stock from Supabase
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id, current_stock")
+      .in("id", productIds);
+
+    if (error) {
+      console.error("Error fetching stock:", error);
+      return;
+    }
+
+    // Check if any item exceeds current stock
+    const insufficient = localCart.some((cartItem) => {
+      const matchingProduct = products.find((p) => p.id === cartItem.product_id);
+      return matchingProduct && cartItem.quantity > matchingProduct.current_stock;
+    });
+
+    setHasInsufficientStock(insufficient);
+  }
+
+  checkStock();
+  }, [localCart]);
 
   const handleLocalUpdate = (product_id: string, quantity: number) => {
     const updated = updateLocalCartItem(product_id, quantity);
@@ -117,7 +151,6 @@ export default function CartPage() {
   const pending = remoteOrders.filter((item) => item.status === "pending");
   const purchased = remoteOrders.filter((item) => item.status === "completed");
   const refunded = remoteOrders.filter((item) => item.status === "refunded");
-
   return (
     <>
       <Navbar />
@@ -165,7 +198,12 @@ export default function CartPage() {
           {localCart.length > 0 && (
             <button
               onClick={handlePurchase}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              disabled={hasInsufficientStock}
+              className={`mt-4 px-4 py-2 rounded ${
+                hasInsufficientStock
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
             >
               Purchase All
             </button>

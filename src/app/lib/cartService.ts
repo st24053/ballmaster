@@ -49,6 +49,39 @@ export function deleteLocalCartItem(product_id: string) {
 import { supabase } from "@/app/lib/supabaseClient";
 
 export async function purchaseCart(user_email: string, customer_name: string) {
+  if (localCart.length === 0) {
+    alert("Your cart is empty.");
+    return;
+  }
+
+  // Get unique product IDs from the cart
+  const productIds = [...new Set(localCart.map(item => item.product_id))];
+
+  // Fetch all products in one query
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, name, current_stock")
+    .in("id", productIds);
+
+  if (productsError) {
+    alert(`Failed to fetch products: ${productsError.message}`);
+    return;
+  }
+
+  // Check stock for each cart item
+  for (const item of localCart) {
+    const product = products.find(p => p.id === item.product_id);
+    if (!product) {
+      alert(`Product not found (ID: ${item.product_id})`);
+      return;
+    }
+    if (product.current_stock < item.quantity) {
+      alert(`Insufficient stock for "${product.name}". Available: ${product.current_stock}, Requested: ${item.quantity}`);
+      return;
+    }
+  }
+
+  // If all stock checks pass, insert orders
   const pendingOrders = localCart.map((item) => ({
     ...item,
     user_email,
@@ -56,12 +89,17 @@ export async function purchaseCart(user_email: string, customer_name: string) {
     status: "pending",
   }));
 
-  const { data, error } = await supabase.from("orders").insert(pendingOrders);
-  if (error) throw new Error(`Failed to purchase items: ${error.message}`);
+  const { error } = await supabase.from("orders").insert(pendingOrders);
+  if (error) {
+    alert(`Failed to purchase items: ${error.message}`);
+    return;
+  }
 
+  // Clear cart
   localCart = [];
   saveLocalCart(localCart);
-  return data;
+
+  alert("Purchase successful!");
 }
 
 export async function refundOrder(id: string) {
