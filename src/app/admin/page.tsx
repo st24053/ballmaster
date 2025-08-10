@@ -248,6 +248,8 @@ const handleConfirm = async (id: string) => {
                 <th className="p-2 border">Product</th>
                 <th className="p-2 border">Customer</th>
                 <th className="p-2 border">Quantity</th>
+                <th className="p-2 border">Total ($)</th>
+                <th className="p-2 border">Time</th>
                 <th className="p-2 border">Status</th>
                 <th className="p-2 border">Actions</th>
                 </tr>
@@ -257,14 +259,35 @@ const handleConfirm = async (id: string) => {
                   <tr key={order.id} className="border-t">
                     <td className="p-2 border">{order.product_name}</td>
                     <td className="p-2 border">
-                      <a
-                        href={`mailto:${order.user_email}`}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(order.user_email);
+                          const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                            order.user_email
+                          )}&su=${encodeURIComponent("Regarding your order")}&body=${encodeURIComponent(
+                            `Hi ${order.customer_name},\n\n`
+                          )}`;
+                          window.open(gmailUrl, "_blank");
+                        }}
                         className="text-blue-600 hover:underline"
                       >
                         {order.customer_name}
-                      </a>
+                      </button>
                     </td>
                     <td className="p-2 border">{order.quantity}</td>
+                    <td className="p-2 border">{order.total_price}</td>
+                    <td className="p-2 border">
+                      {order.created_at
+                        ? new Date(order.created_at).toLocaleString("en-GB", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          }).replace(",", " at")
+                        : "N/A"}
+                    </td>
                     <td className="p-2 border">{order.status}</td>
                       <td className="p-2 border space-x-2">
                         {order.status === "pending" && (

@@ -39,31 +39,44 @@ function ProductPageContent({ id }: { id: string }) {
   const totalPrice = (quantity * product.price).toFixed(2);
 
   const handleAddToLocalCart = async () => {
-    if (!session?.user) {
-      setStatus("You must be logged in.");
-      return;
-    }
-
-    try {
-      await addToLocalCart({
-        product_id: product.id,
-        product_name: product.name,
-        user_email: session.user.email!,
-        quantity,
-        total_price: quantity * product.price,
-        customer_name: session.user.name || "Anonymous",
-        image_url: product.image_url || "",
-        status: "pending",
-      });
-      setStatus("Item added to cart!");
-    } catch (error: unknown) {
-  if (error instanceof Error) {
-    setStatus(`Failed: ${error.message}`);
-  } else {
-    setStatus('Failed: Unknown error');
+  if (!session?.user) {
+    setStatus("You must be logged in.");
+    return;
   }
-}
-  };
+
+  // Get the current cart from localStorage
+  const currentCart = JSON.parse(localStorage.getItem("localCart") || "[]");
+
+  // Check if product is already in the cart
+  const productAlreadyInCart = currentCart.some(
+    (item: { product_id: string }) => item.product_id === product.id
+  );
+
+  if (productAlreadyInCart) {
+    alert("You have already placed an order for this product.");
+    return;
+  }
+
+  try {
+    await addToLocalCart({
+      product_id: product.id,
+      product_name: product.name,
+      user_email: session.user.email!,
+      quantity,
+      total_price: quantity * product.price,
+      customer_name: session.user.name || "Anonymous",
+      image_url: product.image_url || "",
+      status: "pending",
+    });
+    setStatus("Item added to cart!");
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      setStatus(`Failed: ${error.message}`);
+    } else {
+      setStatus("Failed: Unknown error");
+    }
+  }
+};
 
   return (
     <div>
