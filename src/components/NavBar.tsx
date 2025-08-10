@@ -15,7 +15,10 @@ export default function Navbar() {
   return (
     <header className="p-4 flex justify-between items-center bg-blue-600 text-white">
       {/* Title and Home Button */}
-      <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push("/")}> 
+      <div
+        className="flex items-center gap-4 cursor-pointer"
+        onClick={() => router.push("/")}
+      >
         <h1 className="text-xl font-bold">Ballmaster</h1>
       </div>
 
@@ -28,7 +31,9 @@ export default function Navbar() {
             height={32}
             className="rounded-full"
           />
-          <span>{session.user.name}</span>
+          {/* Hide name on small screens */}
+          <span className="hidden sm:inline">{session.user.name}</span>
+
           <a href="/cart" className="underline ml-2">
             Cart
           </a>
