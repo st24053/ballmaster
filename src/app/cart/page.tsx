@@ -146,7 +146,7 @@ export default function CartPage() {
     
   };
 
-  if (!session?.user) return <p className="p-4">Please login to view your cart.</p>;
+  if (!session?.user) return <><Navbar /> <p className="p-4">Please login to view your cart.</p></>;
 
   const pending = remoteOrders.filter((item) => item.status === "pending");
   const purchased = remoteOrders.filter((item) => item.status === "completed");
