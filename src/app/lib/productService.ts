@@ -1,13 +1,18 @@
 import { supabase } from './supabaseClient';
 import { Order } from '../types/orders';
+import { Product, NewProduct } from "../types/product";
 
-
-export async function getProductById(id: string) {
-  const { data, error } = await supabase
+export async function getProductById(id: string, authorEmail?: string) {
+  let query = supabase
     .from('products')
     .select('*')
-    .eq('id', id)
-    .single();
+    .eq('id', id);
+
+  if (authorEmail) {
+    query = query.eq('author_email', authorEmail);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     console.error('Failed to fetch product:', error.message);
@@ -37,10 +42,10 @@ export async function uploadImage(file: File): Promise<string> {
 // Insert a new product into the 'products' table
 export async function insertProduct(product: NewProduct) {
   const { current_stock, ...rest } = product;
-
   const { error } = await supabase.from("products").insert([
     {
       ...rest,
+      author_email: product.author_email, // store admin email
       current_stock: product.stock, // Always start current_stock = stock
     },
   ]);
@@ -106,7 +111,7 @@ export async function discontinueProduct(id: string): Promise<void> {
 // Update an existing product by ID
 export async function updateProduct(id: string, updates: Partial<Product>) {
   const { error } = await supabase
-    .from('products')
+    .from('products')   
     .update(updates)
     .eq('id', id);
 
@@ -119,17 +124,18 @@ export async function placeOrder(order: Order) {
   return data;
 }
 
-export type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  current_stock: number;
-  stock: number;
-  categories: string[];
-  image_url?: string;
-  created_by?: string; // optional for fetched rows
-};
+// Fetch products by author_email for admin dashboard
+export async function getProductsByAuthorEmail(email: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('author_email', email)
+    .order('created_at', { ascending: false });
 
-// Type for inserting new products
-export type NewProduct = Omit<Product, 'id'> & { created_by: string };
+  if (error) {
+    console.error('Failed to fetch products for this admin:', error.message);
+    return [];
+  }
+
+  return data;
+}

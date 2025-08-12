@@ -10,17 +10,21 @@ import { Product } from '@/app/types/product';
 import Navbar from "@/components/NavBar";
 import React from "react";
 
+// Product page component
+
 type Props = {
     params: Promise<{
         id: string;
     }>;
 };
 
+// This wrapper is needed to use the `params` in a client component
 export default function ProductPageWrapper({ params }: Props) {
     const { id } = React.use(params);
     return <ProductPageContent id={id} />;
 }
 
+// Main product page content
 function ProductPageContent({ id }: { id: string }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -52,6 +56,7 @@ function ProductPageContent({ id }: { id: string }) {
     (item: { product_id: string }) => item.product_id === product.id
   );
 
+  // If product is already in the cart, show an alert
   if (productAlreadyInCart) {
     alert("You have already placed an order for this product.");
     return;
@@ -83,6 +88,7 @@ function ProductPageContent({ id }: { id: string }) {
     <Navbar />
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
+        {/* Product Image */}
         <div className="relative w-full md:w-1/2 h-[400px]">
           <Image
             src={
@@ -96,6 +102,7 @@ function ProductPageContent({ id }: { id: string }) {
           />
         </div>
 
+        {/* Product Details */}
         <div className="md:w-1/2">
           <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
           <p className="text-xl text-gray-700 mb-2">${product.price}</p>
@@ -123,7 +130,8 @@ function ProductPageContent({ id }: { id: string }) {
             <p className="text-md mt-2">
               Total Price: <span className="font-semibold">${totalPrice}</span>
             </p>
-
+            
+            {/* Add to Cart Button */}
             <button
             onClick={handleAddToLocalCart}
             disabled={!Number.isInteger(quantity) || quantity < 1 || quantity > product.current_stock}

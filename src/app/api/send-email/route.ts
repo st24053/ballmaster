@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import mailjet from "node-mailjet";
 
+// This file handles sending emails using Mailjet
 export async function POST(req: Request) {
   const { to, subject, html } = await req.json();
 
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
     subject,
     html,
   });
-
+// Validate required fields
   try {
     console.log("Request body:", to, subject, html);
     const result = await mj.post("send", { version: "v3.1" }).request({
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
         },
       ],
     });
-
+    // Log the result for debugging
     return NextResponse.json({ success: true, result: result.body });
   } catch (error: unknown) {
   if (error instanceof Error) {

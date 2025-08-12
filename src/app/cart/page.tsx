@@ -14,16 +14,19 @@ import Navbar from "@/components/NavBar";
 import { Order } from "@/app/types/orders";
 import {Product} from "@/app/types/product";
 
+// This page displays the user's cart, allowing them to view, update, and purchase items.
 export default function CartPage() {
   const { data: session } = useSession();
   const [hasInsufficientStock, setHasInsufficientStock] = useState(false);
   const [localCart, setLocalCart] = useState<Order[]>([]);
   const [remoteOrders, setRemoteOrders] = useState<Order[]>([]);
 
+  // Fetch local cart items from localStorage
   useEffect(() => {
     setLocalCart(getLocalCart());
   }, []);
 
+  // Fetch remote orders from Supabase
   useEffect(() => {
     const fetchRemoteOrders = async () => {
       if (session?.user?.email) {
@@ -74,16 +77,19 @@ export default function CartPage() {
   checkStock();
   }, [localCart]);
 
+  // Handle local cart updates and deletions
   const handleLocalUpdate = (product_id: string, quantity: number) => {
     const updated = updateLocalCartItem(product_id, quantity);
     setLocalCart(updated);
   };
 
+  // Handle local cart item deletion
   const handleLocalDelete = (product_id: string) => {
     const updated = deleteLocalCartItem(product_id);
     setLocalCart(updated);
   };
 
+  // Handle purchase of local cart items
   const handlePurchase = async () => {
     if (!session?.user) return;
     await purchaseCart(session.user.email || "unknown@example.com", session.user.name || "Unknown");
@@ -95,6 +101,7 @@ export default function CartPage() {
     setRemoteOrders(data || []);
   };
 
+  // Handle refund of an order
   const handleRefund = async (id: string) => {
     await refundOrder(id);
     const { data } = await supabase
@@ -103,18 +110,20 @@ export default function CartPage() {
       .eq("user_email", session?.user?.email);
     setRemoteOrders(data || []);
 
-    // Get order with product info
+  // Get order with product info
   const { data: order, error } = await supabase
     .from("orders")
     .select("user_email, product_name, quantity, total_price, image_url")
     .eq("id", id)
     .single();
 
+  // If order not found or error, log and return
   if (error || !order?.user_email) {
     console.error("Failed to fetch order:", error);
     return;
   }
 
+  // HTML content for the refund email
   const html = `
   <div style="font-family: Arial, sans-serif; padding: 20px;">
     <h2 style="color: #F44336;">❌ Order Refunded</h2>
@@ -133,7 +142,7 @@ export default function CartPage() {
     <p>– The Ballmaster Team</p>
   </div>
 `;
-
+  // Send the email using the API route
   await fetch("/api/send-email", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -145,7 +154,7 @@ export default function CartPage() {
   })
     
   };
-
+  // If user is not logged in, show a message
   if (!session?.user) return <><Navbar /> <p className="p-4">Please login to view your cart.</p></>;
 
   const pending = remoteOrders.filter((item) => item.status === "pending");
@@ -162,6 +171,7 @@ export default function CartPage() {
         {/* Local Cart */}
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-2">Current Order (Unconfirmed)</h2>
+          {/* Show message if cart is empty */}
           {localCart.length === 0 ? (
             <p className="text-gray-500">No items added yet.</p>
           ) : (
@@ -170,7 +180,6 @@ export default function CartPage() {
                 <li key={index} className="border p-4 rounded shadow-sm">
                   <div className="flex justify-between items-center">
                     <div>
-
                       <p className="font-bold">{item.product_name}</p>
                       <p>Quantity: {item.quantity}</p>
                       <p>Total: ${item.total_price.toFixed(2)}</p>
@@ -185,6 +194,7 @@ export default function CartPage() {
                         }
                         className="w-16 border p-1"
                       />
+                      {/* Show delete button */}
                       <button
                         onClick={() => handleLocalDelete(item.product_id)}
                         className="underline text-red-600"
@@ -197,6 +207,7 @@ export default function CartPage() {
               ))}
             </ul>
           )}
+          {/* Show purchase button if items in cart, disabling when there is insufficent stock*/}
           {localCart.length > 0 && (
             <button
               onClick={handlePurchase}

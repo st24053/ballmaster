@@ -1,7 +1,7 @@
-// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+// This file handles authentication using NextAuth.js with Google as the provider.
 declare module "next-auth" {
   interface Session {
     user: {
@@ -12,7 +12,7 @@ declare module "next-auth" {
     };
   }
 }
-
+// This is the main handler for NextAuth.js
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -23,6 +23,7 @@ const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async session({ session, token }) {
+      // Set user role based on email domain
       if (session.user) {
         session.user.role = token.email?.endsWith("@ormiston.school.nz") ? "admin" : "user";
       }

@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import NavBar from "../../components/NavBar";
 import { useRouter } from 'next/navigation';
 
+// Login page component
 export default function LoginPage() {
 
   const router = useRouter();

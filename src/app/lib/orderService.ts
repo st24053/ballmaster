@@ -1,23 +1,25 @@
 import { supabase } from "./supabaseClient";
 import { Order } from "../types/orders";
-import { sendEmailReceipt } from "./gmailService";
 
+// Fetch all orders from the 'orders' table
 export async function getAllOrders(): Promise<Order[]> {
   const { data, error } = await supabase.from("orders").select("*");
   if (error) throw new Error(error.message);
   return data;
 }
-
+// Delete an order by ID
 export async function deleteOrder(id: string) {
   const { error } = await supabase.from("orders").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
 
+// Refund an order by ID
 export async function refundOrder(id: string) {
   const { error } = await supabase.from("orders").update({ status: "refunded" }).eq("id", id);
   if (error) throw new Error(error.message);
 }
 
+// Confirm an order by ID
 export async function confirmOrder(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from("orders")

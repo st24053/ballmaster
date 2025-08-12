@@ -171,6 +171,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         await insertProduct({
           ...payload,
           created_by: createdBy,
+          author_email: session?.user?.email || '',
         });
       }
 

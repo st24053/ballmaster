@@ -9,6 +9,7 @@ import { Product } from "../app/types/product";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
+// ProductSlider component to display products in a slider format
 export function ProductSlider() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +33,7 @@ export function ProductSlider() {
     )
   ));
 
+  // Filter products based on search term and selected category
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -43,6 +45,7 @@ export function ProductSlider() {
     return product.current_stock > 0 && matchesSearch && matchesCategory;
   });
 
+  // Slider settings
   const settings = {
     dots: true,
     infinite: true,
@@ -98,6 +101,7 @@ export function ProductSlider() {
   );
 }
 
+// SingleProductCard component if there's only one product to display
 function SingleProductCard({ product }: { product: Product }) {
   const categories = Array.isArray(product.categories)
     ? product.categories
@@ -109,6 +113,7 @@ function SingleProductCard({ product }: { product: Product }) {
     <Link href={`/product/${product.id}`}>
       <div className="bg-white p-4 rounded shadow mx-2 relative group cursor-pointer">
         <div className="relative w-full h-[200px]">
+          {/* Ensure image URL is valid */}
           <Image
             src={
               product.image_url?.startsWith("http") || product.image_url?.startsWith("/")
@@ -119,6 +124,7 @@ function SingleProductCard({ product }: { product: Product }) {
             fill
             className="rounded object-cover"
           />
+        {/* Overlay for product description, name, price and stock*/}
           <div className="absolute inset-0 bg-black bg-opacity-70 text-white p-2 opacity-0 group-hover:opacity-70 transition-opacity duration-300">
             <p className="text-sm">{product.description}</p>
           </div>

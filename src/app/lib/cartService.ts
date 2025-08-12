@@ -1,9 +1,12 @@
 "use client";
 
 import { Order } from "@/app/types/orders";
-
+import { supabase } from "@/app/lib/supabaseClient";
 const LOCAL_CART_KEY = "localCart";
 
+let localCart = loadLocalCart();
+
+// Load the local cart from localStorage
 function loadLocalCart(): Omit<Order, "id" | "created_at">[] {
   if (typeof window === "undefined") return [];
   try {
@@ -14,24 +17,26 @@ function loadLocalCart(): Omit<Order, "id" | "created_at">[] {
   }
 }
 
+// Save the local cart to localStorage
 function saveLocalCart(cart: Omit<Order, "id" | "created_at">[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(cart));
 }
 
-let localCart = loadLocalCart();
-
+// Add an item to the local cart with an ID and created_at
 export function addToLocalCart(order: Omit<Order, "id" | "created_at">) {
   localCart.push(order);
   saveLocalCart(localCart);
   return [...localCart];
 }
 
+// Fetch the local cart
 export function getLocalCart() {
   localCart = loadLocalCart();
   return [...localCart];
 }
 
+// Update an item in the local cart by product ID
 export function updateLocalCartItem(product_id: string, quantity: number) {
   localCart = localCart.map((item) =>
     item.product_id === product_id ? { ...item, quantity } : item
@@ -40,20 +45,15 @@ export function updateLocalCartItem(product_id: string, quantity: number) {
   return [...localCart];
 }
 
+// Delete an item from the local cart by product ID
 export function deleteLocalCartItem(product_id: string) {
   localCart = localCart.filter((item) => item.product_id !== product_id);
   saveLocalCart(localCart);
   return [...localCart];
 }
 
-import { supabase } from "@/app/lib/supabaseClient";
-
+// Purchase items in the local cart
 export async function purchaseCart(user_email: string, customer_name: string) {
-  if (localCart.length === 0) {
-    alert("Your cart is empty.");
-    return;
-  }
-
   // Get unique product IDs from the cart
   const productIds = [...new Set(localCart.map(item => item.product_id))];
 
@@ -92,6 +92,7 @@ export async function purchaseCart(user_email: string, customer_name: string) {
   const { error } = await supabase.from("orders").insert(pendingOrders);
   if (error) {
     alert(`Failed to purchase items: ${error.message}`);
+    alert(pendingOrders)
     return;
   }
 
@@ -102,6 +103,7 @@ export async function purchaseCart(user_email: string, customer_name: string) {
   alert("Purchase successful!");
 }
 
+// Refund an order by ID
 export async function refundOrder(id: string) {
   const { data, error } = await supabase
     .from("orders")
