@@ -2,30 +2,43 @@
 
 import { Order } from "@/app/types/orders";
 import { supabase } from "@/app/lib/supabaseClient";
+
 const LOCAL_CART_KEY = "localCart";
 
-let localCart = loadLocalCart();
+// Local cart items must include price for recalculation
+export type LocalCartItem = Omit<Order, "id" | "created_at"> & {
+  price: number; // unit price
+};
+
+let localCart: LocalCartItem[] = loadLocalCart();
 
 // Load the local cart from localStorage
-function loadLocalCart(): Omit<Order, "id" | "created_at">[] {
+function loadLocalCart(): LocalCartItem[] {
   if (typeof window === "undefined") return [];
   try {
     const json = localStorage.getItem(LOCAL_CART_KEY);
-    return json ? JSON.parse(json) : [];
+    const items: LocalCartItem[] = json ? JSON.parse(json) : [];
+    // Ensure total_price is always valid
+    return items.map((item) => ({
+      ...item,
+      total_price: item.price * item.quantity,
+    }));
   } catch {
     return [];
   }
 }
 
 // Save the local cart to localStorage
-function saveLocalCart(cart: Omit<Order, "id" | "created_at">[]) {
+function saveLocalCart(cart: LocalCartItem[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(cart));
 }
 
-// Add an item to the local cart with an ID and created_at
+// Add an item to the local cart
 export function addToLocalCart(order: Omit<Order, "id" | "created_at">) {
-  localCart.push(order);
+  const quantity = Number.isFinite(order.quantity) ? order.quantity : 1;
+  const total_price = order.price * quantity;
+  localCart.push({ ...order, quantity, total_price });
   saveLocalCart(localCart);
   return [...localCart];
 }
@@ -38,8 +51,11 @@ export function getLocalCart() {
 
 // Update an item in the local cart by product ID
 export function updateLocalCartItem(product_id: string, quantity: number) {
+  const safeQty = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
   localCart = localCart.map((item) =>
-    item.product_id === product_id ? { ...item, quantity } : item
+    item.product_id === product_id
+      ? { ...item, quantity: safeQty, total_price: item.price * safeQty }
+      : item
   );
   saveLocalCart(localCart);
   return [...localCart];
@@ -54,10 +70,12 @@ export function deleteLocalCartItem(product_id: string) {
 
 // Purchase items in the local cart
 export async function purchaseCart(user_email: string, customer_name: string) {
-  // Get unique product IDs from the cart
-  const productIds = [...new Set(localCart.map(item => item.product_id))];
+  if (localCart.length === 0) return;
 
-  // Fetch all products in one query
+  // Get unique product IDs
+  const productIds = [...new Set(localCart.map((item) => item.product_id))];
+
+  // Fetch products from DB
   const { data: products, error: productsError } = await supabase
     .from("products")
     .select("id, name, current_stock")
@@ -68,35 +86,37 @@ export async function purchaseCart(user_email: string, customer_name: string) {
     return;
   }
 
-  // Check stock for each cart item
+  // Stock check
   for (const item of localCart) {
-    const product = products.find(p => p.id === item.product_id);
+    const product = products.find((p) => p.id === item.product_id);
     if (!product) {
       alert(`Product not found (ID: ${item.product_id})`);
       return;
     }
     if (product.current_stock < item.quantity) {
-      alert(`Insufficient stock for "${product.name}". Available: ${product.current_stock}, Requested: ${item.quantity}`);
+      alert(
+        `Insufficient stock for "${product.name}". Available: ${product.current_stock}, Requested: ${item.quantity}`
+      );
       return;
     }
   }
 
-  // If all stock checks pass, insert orders
+  // Always recalc totals before inserting
   const pendingOrders = localCart.map((item) => ({
     ...item,
     user_email,
     customer_name,
+    total_price: item.price * item.quantity,
     status: "pending",
   }));
 
   const { error } = await supabase.from("orders").insert(pendingOrders);
   if (error) {
     alert(`Failed to purchase items: ${error.message}`);
-    alert(pendingOrders)
     return;
   }
 
-  // Clear cart
+  // Clear local cart
   localCart = [];
   saveLocalCart(localCart);
 

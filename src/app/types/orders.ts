@@ -6,6 +6,7 @@ export type Order = {
   total_price: number;
   user_email: string;
   customer_name: string;
+  price: number; // Price per unit
   status: 'pending' | 'completed' | 'refunded'; // restrict to valid statuses
   created_at?: string; // optional if Supabase handles timestamps
   image_url: string;

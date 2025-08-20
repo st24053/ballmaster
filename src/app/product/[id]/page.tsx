@@ -68,6 +68,7 @@ function ProductPageContent({ id }: { id: string }) {
       product_name: product.name,
       user_email: session.user.email!,
       quantity,
+      price: product.price,
       total_price: quantity * product.price,
       customer_name: session.user.name || "Anonymous",
       image_url: product.image_url || "",

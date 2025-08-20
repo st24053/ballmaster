@@ -12,7 +12,6 @@ import { supabase } from "@/app/lib/supabaseClient";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/NavBar";
 import { Order } from "@/app/types/orders";
-import {Product} from "@/app/types/product";
 
 // This page displays the user's cart, allowing them to view, update, and purchase items.
 export default function CartPage() {
@@ -33,7 +32,7 @@ export default function CartPage() {
         const { data, error } = await supabase
           .from("orders")
           .select("*")
-          .eq("user_email", session?.user?.email);
+          .eq("user_email", session.user.email);
 
         if (!error && data) {
           setRemoteOrders(data);
@@ -44,42 +43,49 @@ export default function CartPage() {
     fetchRemoteOrders();
   }, [session]);
 
+  // Check stock whenever cart changes
   useEffect(() => {
-  async function checkStock() {
-    if (localCart.length === 0) {
-      setHasInsufficientStock(false);
-      return;
+    async function checkStock() {
+      if (localCart.length === 0) {
+        setHasInsufficientStock(false);
+        return;
+      }
+
+      const productIds = localCart.map((item) => item.product_id);
+
+      const { data: products, error } = await supabase
+        .from("products")
+        .select("id, current_stock")
+        .in("id", productIds);
+
+      if (error) {
+        console.error("Error fetching stock:", error);
+        return;
+      }
+
+      const insufficient = localCart.some((cartItem) => {
+        const matchingProduct = products.find(
+          (p) => p.id === cartItem.product_id
+        );
+        return (
+          matchingProduct && cartItem.quantity > matchingProduct.current_stock
+        );
+      });
+
+      setHasInsufficientStock(insufficient);
     }
 
-    // Fetch product IDs from cart
-    const productIds = localCart.map((item) => item.product_id);
-
-    // Get current stock from Supabase
-    const { data: products, error } = await supabase
-      .from("products")
-      .select("id, current_stock")
-      .in("id", productIds);
-
-    if (error) {
-      console.error("Error fetching stock:", error);
-      return;
-    }
-
-    // Check if any item exceeds current stock
-    const insufficient = localCart.some((cartItem) => {
-      const matchingProduct = products.find((p) => p.id === cartItem.product_id);
-      return matchingProduct && cartItem.quantity > matchingProduct.current_stock;
-    });
-
-    setHasInsufficientStock(insufficient);
-  }
-
-  checkStock();
+    checkStock();
   }, [localCart]);
 
-  // Handle local cart updates and deletions
+  // Handle local cart updates (recalculate total)
   const handleLocalUpdate = (product_id: string, quantity: number) => {
-    const updated = updateLocalCartItem(product_id, quantity);
+    let updated = updateLocalCartItem(product_id, quantity);
+    updated = updated.map((item) =>
+      item.product_id === product_id
+        ? { ...item, quantity, total_price: quantity * item.price }
+        : item
+    );
     setLocalCart(updated);
   };
 
@@ -92,12 +98,15 @@ export default function CartPage() {
   // Handle purchase of local cart items
   const handlePurchase = async () => {
     if (!session?.user) return;
-    await purchaseCart(session.user.email || "unknown@example.com", session.user.name || "Unknown");
+    await purchaseCart(
+      session.user.email || "unknown@example.com",
+      session.user.name || "Unknown"
+    );
     setLocalCart([]);
     const { data } = await supabase
       .from("orders")
       .select("*")
-      .eq("user_email", session?.user?.email);
+      .eq("user_email", session.user.email);
     setRemoteOrders(data || []);
   };
 
@@ -110,56 +119,62 @@ export default function CartPage() {
       .eq("user_email", session?.user?.email);
     setRemoteOrders(data || []);
 
-  // Get order with product info
-  const { data: order, error } = await supabase
-    .from("orders")
-    .select("user_email, product_name, quantity, total_price, image_url")
-    .eq("id", id)
-    .single();
+    // Get order with product info
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select("user_email, product_name, quantity, total_price, image_url")
+      .eq("id", id)
+      .single();
 
-  // If order not found or error, log and return
-  if (error || !order?.user_email) {
-    console.error("Failed to fetch order:", error);
-    return;
-  }
+    if (error || !order?.user_email) {
+      console.error("Failed to fetch order:", error);
+      return;
+    }
 
-  // HTML content for the refund email
-  const html = `
-  <div style="font-family: Arial, sans-serif; padding: 20px;">
-    <h2 style="color: #F44336;">❌ Order Refunded</h2>
-    <p>Hi there,</p>
-    <p>Your order has been successfully refunded. Here are the details:</p>
+    // Refund email
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #F44336;">❌ Order Refunded</h2>
+        <p>Hi there,</p>
+        <p>Your order has been successfully refunded. Here are the details:</p>
 
-    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; max-width: 600px;">
-      <img src="${order.image_url}" alt="${order.product_name}" style="width: 100%; max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 10px;" />
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; max-width: 600px;">
+          <img src="${order.image_url}" alt="${order.product_name}" style="width: 100%; max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 10px;" />
 
-      <h3>${order.product_name}</h3>
-      <p><strong>Quantity:</strong> ${order.quantity}</p>
-      <p><strong>Total Refunded:</strong> $${order.total_price.toFixed(2)}</p>
-    </div>
+          <h3>${order.product_name}</h3>
+          <p><strong>Quantity:</strong> ${order.quantity}</p>
+          <p><strong>Total Refunded:</strong> $${order.total_price.toFixed(2)}</p>
+        </div>
 
-    <p style="margin-top: 20px;">Please contact us if you have any questions.</p>
-    <p>– The Ballmaster Team</p>
-  </div>
-`;
-  // Send the email using the API route
-  await fetch("/api/send-email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      to: order.user_email,
-      subject: "Your Order Has Been Refunded!",
-      html, // Use HTML version
-    }),
-  })
-    
+        <p style="margin-top: 20px;">Please contact us if you have any questions.</p>
+        <p>– The Ballmaster Team</p>
+      </div>
+    `;
+
+    await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: order.user_email,
+        subject: "Your Order Has Been Refunded!",
+        html,
+      }),
+    });
   };
-  // If user is not logged in, show a message
-  if (!session?.user) return <><Navbar /> <p className="p-4">Please login to view your cart.</p></>;
+
+  // If user is not logged in
+  if (!session?.user)
+    return (
+      <>
+        <Navbar />
+        <p className="p-4">Please login to view your cart.</p>
+      </>
+    );
 
   const pending = remoteOrders.filter((item) => item.status === "pending");
   const purchased = remoteOrders.filter((item) => item.status === "completed");
   const refunded = remoteOrders.filter((item) => item.status === "refunded");
+
   return (
     <>
       <Navbar />
@@ -167,11 +182,12 @@ export default function CartPage() {
         <div className="flex flex-col items-center">
           <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
         </div>
-      
+
         {/* Local Cart */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">Current Order (Unconfirmed)</h2>
-          {/* Show message if cart is empty */}
+          <h2 className="text-xl font-semibold mb-2">
+            Current Order (Unconfirmed)
+          </h2>
           {localCart.length === 0 ? (
             <p className="text-gray-500">No items added yet.</p>
           ) : (
@@ -182,19 +198,18 @@ export default function CartPage() {
                     <div>
                       <p className="font-bold">{item.product_name}</p>
                       <p>Quantity: {item.quantity}</p>
-                      <p>Total: ${item.total_price.toFixed(2)}</p>
+                      <p>Total: ${item.total_price ? item.total_price.toFixed(2) : "0.00"}</p>
                     </div>
                     <div className="flex gap-2">
                       <input
                         type="number"
                         min={1}
-                        value={item.quantity}
+                        value={Number.isFinite(item.quantity) ? item.quantity : 1}
                         onChange={(e) =>
-                          handleLocalUpdate(item.product_id, parseInt(e.target.value))
+                          handleLocalUpdate(item.product_id, parseInt(e.target.value) || 1)
                         }
                         className="w-16 border p-1"
                       />
-                      {/* Show delete button */}
                       <button
                         onClick={() => handleLocalDelete(item.product_id)}
                         className="underline text-red-600"
@@ -207,7 +222,7 @@ export default function CartPage() {
               ))}
             </ul>
           )}
-          {/* Show purchase button if items in cart, disabling when there is insufficent stock*/}
+
           {localCart.length > 0 && (
             <button
               onClick={handlePurchase}
