@@ -198,7 +198,12 @@ export default function CartPage() {
                     <div>
                       <p className="font-bold">{item.product_name}</p>
                       <p>Quantity: {item.quantity}</p>
-                      <p>Total: ${item.total_price ? item.total_price.toFixed(2) : "0.00"}</p>
+                      <p>
+                        Total: $
+                        {typeof item.total_price === "number"
+                          ? item.total_price.toFixed(2)
+                          : "0.00"}
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <input
@@ -251,7 +256,12 @@ export default function CartPage() {
                     <div>
                       <p className="font-bold">{item.product_name}</p>
                       <p>Quantity: {item.quantity}</p>
-                      <p>Total: ${item.total_price.toFixed(2)}</p>
+                      <p>
+                        Total: $
+                        {typeof item.total_price === "number"
+                          ? item.total_price.toFixed(2)
+                          : "0.00"}
+                      </p>
                       <p>Status: {item.status}</p>
                     </div>
                   </div>
@@ -274,7 +284,12 @@ export default function CartPage() {
                     <div>
                       <p className="font-bold">{item.product_name}</p>
                       <p>Quantity: {item.quantity}</p>
-                      <p>Total: ${item.total_price.toFixed(2)}</p>
+                      <p>
+                        Total: $
+                        {typeof item.total_price === "number"
+                          ? item.total_price.toFixed(2)
+                          : "0.00"}
+                      </p>
                       <p>Status: {item.status}</p>
                     </div>
                     <button

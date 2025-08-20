@@ -5,9 +5,10 @@ import { supabase } from "@/app/lib/supabaseClient";
 
 const LOCAL_CART_KEY = "localCart";
 
-// Local cart items must include price for recalculation
+// Local cart items must include unit price
 export type LocalCartItem = Omit<Order, "id" | "created_at"> & {
   price: number; // unit price
+  total_price: number; // always guaranteed number
 };
 
 let localCart: LocalCartItem[] = loadLocalCart();
@@ -18,11 +19,21 @@ function loadLocalCart(): LocalCartItem[] {
   try {
     const json = localStorage.getItem(LOCAL_CART_KEY);
     const items: LocalCartItem[] = json ? JSON.parse(json) : [];
-    // Ensure total_price is always valid
-    return items.map((item) => ({
-      ...item,
-      total_price: item.price * item.quantity,
-    }));
+
+    // Fix any bad items from old saves
+    const repaired = items.map((item) => {
+      const safeQty = Number.isFinite(item.quantity) && item.quantity > 0 ? item.quantity : 1;
+      const safePrice = Number.isFinite(item.price) ? item.price : 0;
+      return {
+        ...item,
+        quantity: safeQty,
+        price: safePrice,
+        total_price: safePrice * safeQty,
+      };
+    });
+
+    saveLocalCart(repaired); // overwrite with repaired data
+    return repaired;
   } catch {
     return [];
   }
@@ -35,10 +46,19 @@ function saveLocalCart(cart: LocalCartItem[]) {
 }
 
 // Add an item to the local cart
-export function addToLocalCart(order: Omit<Order, "id" | "created_at">) {
-  const quantity = Number.isFinite(order.quantity) ? order.quantity : 1;
-  const total_price = order.price * quantity;
-  localCart.push({ ...order, quantity, total_price });
+export function addToLocalCart(order: Partial<Omit<Order, "id" | "created_at">> & { price?: number }) {
+  const safeQty = Number.isFinite(order.quantity) && order.quantity! > 0 ? order.quantity! : 1;
+  const safePrice = Number.isFinite(order.price!) ? order.price! : 0;
+  const total_price = safePrice * safeQty;
+
+  const newItem: LocalCartItem = {
+    ...order,
+    quantity: safeQty,
+    price: safePrice,
+    total_price,
+  } as LocalCartItem;
+
+  localCart.push(newItem);
   saveLocalCart(localCart);
   return [...localCart];
 }
