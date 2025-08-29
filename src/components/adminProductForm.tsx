@@ -33,8 +33,16 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
   const [loading, setLoading] = useState(false);
   // Local URL to show image preview when user selects an image
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  // Maximum allowed value for numeric fields
-  const maximum = 999999.99;
+  // Maximum allowed value for price field
+  const maximumPrice = 999999.99;
+    // Maximum allowed value for stock fields
+  const maximumStock = 999999.99;
+    // Maximum allowed character length for product name
+  const productMaxLength = 30;
+    // Maximum allowed character length for description
+  const descriptionMaxLength = 300;
+    // Maximum allowed character length for category name
+  const categoryMaxLength = 20;
 
   // On component mount or when initialValues change, populate form for editing
   useEffect(() => {
@@ -58,32 +66,45 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
 
   // Generic input change handler for text and textarea fields
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    try {
-      // For number fields, enforce max value
-      if (['price','stock', 'current_stock'].includes(name)) {
-        const numValue = parseFloat(value);
-        const max = e.target
-        if (numValue == undefined) { // If input is cleared, reset to empty string
-          setForm((prev) => ({ ...prev, [name]: '' }));
-          return;
-        }
-        if (numValue > maximum) return; // Ignore changes exceeding max
-        if(['price'].includes(name)){
-          if (!Number.isInteger(numValue) && numValue.toString().split('.')[1]?.length > 2) return; // Ignore changes that are more than 2 decimal places
-        } if(['stock'].includes(name)){
-          if (!Number.isInteger(numValue)) return; // Ignore changes that are not integers
-        } else {
-          if (!Number.isInteger(numValue) && numValue % 1 !== 0) return; // Ignore changes that are not integers less than zero
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+) => {
+  const { name, value } = e.target;
+
+  try {
+    if (['price', 'stock', 'current_stock'].includes(name)) {
+      const numValue = parseFloat(value);
+
+      if (value.trim().length === 0 || isNaN(numValue)) {
+        setForm((prev) => ({ ...prev, [name]: '' }));
+        return;
+      }
+
+      // Narrow type to HTMLInputElement to safely access `.max`
+      if (e.target instanceof HTMLInputElement) {
+        const maximum = e.target.max ? parseFloat(e.target.max) : Infinity;
+        if (numValue > maximum) return;
+      }
+
+      if (name === 'price') {
+        const decimalPart = value.split('.')[1];
+        if (decimalPart && decimalPart.length > 2) {
+          return; // More than 2 decimal places not allowed
         }
       }
-    } catch (err) {
-      console.error('Error parsing number input', err)
+
+      if (name === 'stock' || name === 'current_stock') {
+        if (!Number.isInteger(numValue)) {
+          return; // Only allow integers
+        }
+      }
     }
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  } catch (err) {
+    console.error('Error parsing number input', err);
+  }
+
+  setForm((prev) => ({ ...prev, [name]: value }));
+};
+
 
   // Add a new category to the categories array if not empty or duplicate
   const handleAddCategory = () => {
@@ -233,7 +254,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       <input
         name="name"
         placeholder="Name"
-        maxLength={30}
+        maxLength={productMaxLength}
         value={form.name}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -244,7 +265,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       <textarea
         name="description"
         placeholder="Description"
-        maxLength={300}
+        maxLength={descriptionMaxLength}
         value={form.description}  
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -257,6 +278,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         placeholder="Price"
         type="number"
         step="0.01"
+        max={maximumPrice}
         value={form.price}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -269,6 +291,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         placeholder="Current Stock"
         type="number"
         step="1"
+        max={maximumStock}
         value={form.current_stock}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -281,6 +304,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         placeholder="Stock"
         type="number"
         step="1"
+        max={maximumStock}
         value={form.stock}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -293,7 +317,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         <div className="flex gap-2 mb-2">
           {/* Input to add new category */}
           <input
-            maxLength={20}
+            maxLength={categoryMaxLength}
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             className="flex-grow p-2 border rounded"

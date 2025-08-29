@@ -11,6 +11,9 @@ export default function Navbar() {
   const handleClick = async () => {
     await signOut({ callbackUrl: "/" });
   };
+  
+  const imgWidth = 32;
+  const imgHeight = 32;
 
   return (
     <header className="p-4 flex justify-between items-center bg-blue-600 text-white">
@@ -27,8 +30,8 @@ export default function Navbar() {
           <Image
             src={session.user.image!}
             alt={session.user.name!}
-            width={32}
-            height={32}
+            width={imgWidth}
+            height={imgHeight}
             className="rounded-full"
           />
           {/* Hide name on small screens */}
