@@ -36,7 +36,13 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
   // Maximum allowed value for price field
   const maximumPrice = 999999.99;
     // Maximum allowed value for stock fields
-  const maximumStock = 999999.99;
+  const maximumStock = 999999;
+  // Minimum allowed value for price field
+  const minimumPrice = 0;
+    // Minimum allowed value for stock fields
+  const minimumCurrentStock = 0;
+      // Minimum allowed value for stock fields
+  const minimumStock = 1;
     // Maximum allowed character length for product name
   const productMaxLength = 30;
     // Maximum allowed character length for description
@@ -82,7 +88,8 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       // Narrow type to HTMLInputElement to safely access `.max`
       if (e.target instanceof HTMLInputElement) {
         const maximum = e.target.max ? parseFloat(e.target.max) : Infinity;
-        if (numValue > maximum) return;
+        const minimum = e.target.min ? parseFloat(e.target.min) : -Infinity;
+        if (numValue > maximum || numValue < minimum) return;
       }
 
       if (name === 'price') {
@@ -279,6 +286,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         type="number"
         step="0.01"
         max={maximumPrice}
+        min={minimumPrice}
         value={form.price}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -292,6 +300,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         type="number"
         step="1"
         max={maximumStock}
+        min={minimumCurrentStock}
         value={form.current_stock}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -305,6 +314,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         type="number"
         step="1"
         max={maximumStock}
+        min={minimumStock}
         value={form.stock}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
