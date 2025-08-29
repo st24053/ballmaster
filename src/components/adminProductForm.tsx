@@ -33,6 +33,8 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
   const [loading, setLoading] = useState(false);
   // Local URL to show image preview when user selects an image
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Maximum allowed value for numeric fields
+  const maximum = 999999.99;
 
   // On component mount or when initialValues change, populate form for editing
   useEffect(() => {
@@ -59,11 +61,36 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    try {
+      // For number fields, enforce max value
+      if (['price','stock', 'current_stock'].includes(name)) {
+        const numValue = parseFloat(value);
+        const max = e.target
+        if (numValue == undefined) { // If input is cleared, reset to empty string
+          setForm((prev) => ({ ...prev, [name]: '' }));
+          return;
+        }
+        if (numValue > maximum) return; // Ignore changes exceeding max
+        if(['price'].includes(name)){
+          if (!Number.isInteger(numValue) && numValue.toString().split('.')[1]?.length > 2) return; // Ignore changes that are more than 2 decimal places
+        } if(['stock'].includes(name)){
+          if (!Number.isInteger(numValue)) return; // Ignore changes that are not integers
+        } else {
+          if (!Number.isInteger(numValue) && numValue % 1 !== 0) return; // Ignore changes that are not integers less than zero
+        }
+      }
+    } catch (err) {
+      console.error('Error parsing number input', err)
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   // Add a new category to the categories array if not empty or duplicate
   const handleAddCategory = () => {
+    if (form.categories.length >= 3) {
+      alert("You can only add up to 3 categories.");
+      return;
+    }
     if (newCategory.trim() && !form.categories.includes(newCategory.trim())) {
       setForm((prev) => ({
         ...prev,
@@ -135,6 +162,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
 
     const stock = parseInt(form.stock);
     const current_stock = parseInt(form.current_stock);
+    const categories = form.categories;
 
     // Validate that current stock is not more than max stock
     if (current_stock > stock) {
@@ -142,6 +170,20 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       setLoading(false);
       return;
     }
+
+    if (categories.length > 3) {
+      alert("You can only add up to 3 categories.");
+      setLoading(false);
+      return;
+    }
+
+    for (let i = 0; i < categories.length; i++) {
+      const currentItem = categories[i];
+      if (currentItem.length > 30) {
+        alert("Each category must be less than 30 characters.");
+        setLoading(false);
+        return;
+    } }
 
     let imageUrl = form.image_url;
 
@@ -191,6 +233,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       <input
         name="name"
         placeholder="Name"
+        maxLength={30}
         value={form.name}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -201,7 +244,8 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       <textarea
         name="description"
         placeholder="Description"
-        value={form.description}
+        maxLength={300}
+        value={form.description}  
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
         required
@@ -224,6 +268,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         name="current_stock"
         placeholder="Current Stock"
         type="number"
+        step="1"
         value={form.current_stock}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -235,6 +280,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         name="stock"
         placeholder="Stock"
         type="number"
+        step="1"
         value={form.stock}
         onChange={handleChange}
         className="w-full p-2 mb-2 border rounded"
@@ -247,6 +293,7 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
         <div className="flex gap-2 mb-2">
           {/* Input to add new category */}
           <input
+            maxLength={20}
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             className="flex-grow p-2 border rounded"
@@ -325,4 +372,4 @@ export default function AdminProductForm({ initialValues, onDoneAction }: {
       </button>
     </form>
   );
-}
+  }
